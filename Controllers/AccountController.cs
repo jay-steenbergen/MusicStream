@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MusicStream.Models;
 using MusicStream.ViewModel;
@@ -25,12 +26,6 @@ namespace MusicStream.Controllers
         }
         [HttpGet]
         public ViewResult Register() { return View(); }
-        [HttpGet]
-        public IActionResult Login(string returnURl="")
-        {
-            var model = new LoginViewModel { ReturnUrl = returnURl };
-            return View(model);
-        }
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
@@ -41,20 +36,7 @@ namespace MusicStream.Controllers
 
                 if(result.Succeeded)
                 {
-                    var confirmationToken = this.userManager.GenerateEmailConfirmationTokenAsync(user).Result;
-                    var confirmationLink = Url.Action(nameof(VerifyEmail), "Account", new {userId = user.Id, token = confirmationToken }, protocol: HttpContext.Request.Scheme);
-
-                    //testing purposes only
-                    SmtpClient client = new SmtpClient();
-                    client.DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory;
-                    client.PickupDirectoryLocation = @"c:/Test";
-                    client.Send("test@localhost", user.Email, "Confirm your emial", confirmationLink);
-                    
-                    //await this.emailService.SendAsync("test@test.com", "Emial Verify",$"<a/ href=\"{link}\">Verify Email</a>", true);
-
-                    return RedirectToAction("EmailVerification");
-                    //await this.signInManager.SignInAsync(user, false);   old code that works
-                    //    return RedirectToAction("Index", "Home");                
+                    return generateEmailConfirmation(user);
                 }
                 else
                 {
@@ -64,37 +46,31 @@ namespace MusicStream.Controllers
             }
             return View();
         }
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        [HttpGet]
+        public IActionResult Login(string returnUrl = null)
         {
-            if(ModelState.IsValid)
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            if (ModelState.IsValid)
             {
-                //check if email is verified
                 var user = await this.userManager.FindByNameAsync(model.UserName);
-                //if (user != null)
-                //{
-                //    if (!userManager.IsEmailConfirmedAsync(user).Result)
-                //    {
-                //        ModelState.AddModelError("", "Email not confirmed");
-                //        return View(model);
-                //    }
-                //}
-
-                //login user
-                var result = await this.signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, false);
-
-                if (result.Succeeded)
+                if (emailConfirmation(user))
                 {
-                    if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                        return Redirect(model.ReturnUrl);
+                    return await loginUser(model, returnUrl);
                 }
                 else
                 {
-                    return RedirectToAction("Index", "Home");
+                    ModelState.AddModelError("", "Email not confirmed");
+                    return View(model);
                 }
             }
-            ModelState.AddModelError("", "Invalid login attempt");
-            return View(model);
+            return RedirectToAction("Index", "Home");
         }
         [HttpPost]
         public async Task<IActionResult> Logout()
@@ -103,7 +79,26 @@ namespace MusicStream.Controllers
             await signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
+
+
         public IActionResult EmailVerification() => View();
+        private bool emailConfirmation(User user)
+        {
+            return user != null && userManager.IsEmailConfirmedAsync(user).Result;
+        }
+        private IActionResult generateEmailConfirmation(User user)
+        {
+            var confirmationToken = this.userManager.GenerateEmailConfirmationTokenAsync(user).Result;
+            var confirmationLink = Url.Action(nameof(VerifyEmail), "Account", new { userId = user.Id, token = confirmationToken }, protocol: HttpContext.Request.Scheme);
+            var messageBody = $"Click the Link to verify email.  {confirmationLink}";
+            //testing purposes only
+            SmtpClient client = new SmtpClient();
+            client.DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory;
+            client.PickupDirectoryLocation = @"c:/Test";
+            client.Send("test@localhost", user.Email, "Confirm your MS account. Do not reply to this email.", messageBody);
+
+            return RedirectToAction("EmailVerification");
+        }
         public async Task<IActionResult> VerifyEmail(string userId, string token)
         {
             var user = await this.userManager.FindByIdAsync(userId);
@@ -116,10 +111,33 @@ namespace MusicStream.Controllers
             }
             else
             {
-                ViewBag.Message = "Error while confirming your emial";
+                ViewBag.Message = "Error while confirming your email";
                 return BadRequest();
             }
         }
-        
+        private async Task<IActionResult> loginUser(LoginViewModel model, string returnUrl)
+        {
+            var result = await this.signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, false);
+
+            if (result.Succeeded)
+            {
+                return RedirectToLocal(returnUrl);
+            }
+            else
+            {
+                ModelState.AddModelError("", "Invalid login attempt");
+                return View(model);
+            }
+        }
+        private IActionResult RedirectToLocal(string returnUrl)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction("Index", "Home");
+        }
+
+
     }
 }

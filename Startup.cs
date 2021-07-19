@@ -10,6 +10,8 @@ using MusicStream.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using NETCore.MailKit.Extensions;
 using NETCore.MailKit.Infrastructure.Internal;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
 
 namespace MusicStream
 {

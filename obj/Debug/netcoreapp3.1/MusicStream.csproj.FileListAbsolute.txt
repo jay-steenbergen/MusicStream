@@ -166,7 +166,6 @@ C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\bin\Debug\netcore
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\bin\Debug\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\obj\Debug\netcoreapp3.1\Razor\Views\Account\Register.cshtml.g.cs
-C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\obj\Debug\netcoreapp3.1\Razor\Views\Account\View.cshtml.g.cs
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\bin\Debug\netcoreapp3.1\Microsoft.AspNet.Identity.Core.dll
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\obj\Debug\netcoreapp3.1\Razor\Views\Account\Login.cshtml.g.cs
 C:\Users\jasteenb.REDMOND\source\repos\MusicStream\MusicStream\bin\Debug\netcoreapp3.1\MailKit.dll
